@@ -18,36 +18,35 @@ class TestDataPartitioner(unittest.TestCase):
         partitioner = data_partitioner.DataPartitioner({
                 "evaluation":{"train":(10,20),"test":(21,40)},
                 "prediction":{"train":(10,30),"predict":(31,40)},
-            }, self.data)
+            })
 
-        self.assertEqual(min_time(partitioner["evaluation","train"]), 10)
-        self.assertEqual(max_time(partitioner["evaluation","train"]), 20)
+        self.assertEqual(min_time(partitioner("evaluation","train",self.data)), 10)
+        self.assertEqual(max_time(partitioner("evaluation","train",self.data)), 20)
 
-        self.assertEqual(min_time(partitioner["prediction","predict"]), 31)
-        self.assertEqual(max_time(partitioner["prediction","predict"]), 40)
+        self.assertEqual(min_time(partitioner("prediction","predict",self.data)), 31)
+        self.assertEqual(max_time(partitioner("prediction","predict",self.data)), 40)
 
     def test_legacy_import(self):
         partitioner = data_partitioner.DataPartitioner.from_legacy_periods([
                 legacy.Period("A",10,20,21,30),
                 legacy.Period("B",10,30,31,40),
                 legacy.Period("C",10,40,41,50),
-            ],
-            self.data)
+            ])
 
-        self.assertEqual(min_time(partitioner["A","train"]), 10)
-        self.assertEqual(max_time(partitioner["A","train"]), 20)
+        self.assertEqual(min_time(partitioner("A","train",self.data)), 10)
+        self.assertEqual(max_time(partitioner("A","train",self.data)), 20)
 
-        self.assertEqual(min_time(partitioner["A","predict"]), 21)
-        self.assertEqual(max_time(partitioner["A","predict"]), 30)
+        self.assertEqual(min_time(partitioner("A","predict",self.data)), 21)
+        self.assertEqual(max_time(partitioner("A","predict",self.data)), 30)
 
-        self.assertEqual(min_time(partitioner["B","train"]), 10)
-        self.assertEqual(max_time(partitioner["B","train"]), 30)
+        self.assertEqual(min_time(partitioner("B","train",self.data)), 10)
+        self.assertEqual(max_time(partitioner("B","train",self.data)), 30)
 
-        self.assertEqual(min_time(partitioner["B","predict"]), 31)
-        self.assertEqual(max_time(partitioner["B","predict"]), 40)
+        self.assertEqual(min_time(partitioner("B","predict",self.data)), 31)
+        self.assertEqual(max_time(partitioner("B","predict",self.data)), 40)
 
-        self.assertEqual(min_time(partitioner["C","train"]), 10)
-        self.assertEqual(max_time(partitioner["C","train"]), 40)
+        self.assertEqual(min_time(partitioner("C","train",self.data)), 10)
+        self.assertEqual(max_time(partitioner("C","train",self.data)), 40)
 
-        self.assertEqual(min_time(partitioner["C","predict"]), 41)
-        self.assertEqual(max_time(partitioner["C","predict"]), 50)
+        self.assertEqual(min_time(partitioner("C","predict",self.data)), 41)
+        self.assertEqual(max_time(partitioner("C","predict",self.data)), 50)

@@ -1,5 +1,5 @@
 from collections import defaultdict
-from typing import Callable, Dict, List, TypeVar, Generic, Tuple
+from typing import Callable, Dict, List, TypeVar, Tuple
 from toolz.functoolz import curry
 import pandas as pd
 from . import legacy
@@ -9,15 +9,12 @@ PartitionNestedDict = Dict[str, Dict[str, T]]
 Partitions = PartitionNestedDict[Tuple[int,int]]
 TimePeriodGetter = PartitionNestedDict[Callable[[pd.DataFrame],pd.DataFrame]]
 
-O = TypeVar("O")
-
 get_time_period_from_dataframe = curry(lambda start, end, data: data.loc[start:end, :])
 
-class DataPartitioner(Generic[O]):
-    def __init__(self, partitions: Partitions, data: pd.DataFrame):
+class DataPartitioner():
+    def __init__(self, partitions: Partitions):
         self.partitions = partitions
         self._data_partition_getters: TimePeriodGetter = defaultdict(dict)
-        self._data = data
         for partition_name, time_periods in self.partitions.items():
             for time_period_name, time_period in time_periods.items():
                 start, end = time_period
@@ -25,12 +22,14 @@ class DataPartitioner(Generic[O]):
                     time_period_name: get_time_period_from_dataframe(
                         start,end)})
 
-    def __getitem__(self, k):
-        partition, time_period = k
-        return self._data_partition_getters[partition][time_period](self._data)
+    def __call__(self,
+            partition_name: str,
+            time_period_name: str,
+            data: pd.DataFrame)-> pd.DataFrame:
+        return self._data_partition_getters[partition_name][time_period_name](data)
 
     @classmethod
-    def from_legacy_periods(cls, periods: List[legacy.Period], data: pd.DataFrame):
+    def from_legacy_periods(cls, periods: List[legacy.Period]):
         for p in periods:
             try:
                 legacy.period_object_is_valid(p)
@@ -44,4 +43,4 @@ class DataPartitioner(Generic[O]):
                     "predict": (period.predict_start, period.predict_end),
                     }
 
-        return cls(partitions, data)
+        return cls(partitions)
