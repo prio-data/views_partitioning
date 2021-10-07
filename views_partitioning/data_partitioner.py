@@ -1,18 +1,16 @@
 from collections import defaultdict
-from typing import Callable, Dict, List, TypeVar, Tuple
+from typing import Callable, List
 from toolz.functoolz import curry
+from views_schema import PartitionTimes,PartitionDictionaries
 import pandas as pd
 from . import legacy
 
-T = TypeVar("T")
-PartitionNestedDict = Dict[str, Dict[str, T]]
-Partitions = PartitionNestedDict[Tuple[int,int]]
-TimePeriodGetter = PartitionNestedDict[Callable[[pd.DataFrame],pd.DataFrame]]
+TimePeriodGetter = PartitionDictionaries[Callable[[pd.DataFrame],pd.DataFrame]]
 
 get_time_period_from_dataframe = curry(lambda start, end, data: data.loc[start:end, :])
 
 class DataPartitioner():
-    def __init__(self, partitions: Partitions):
+    def __init__(self, partitions: PartitionTimes):
         self.partitions = partitions
         self._data_partition_getters: TimePeriodGetter = defaultdict(dict)
         for partition_name, time_periods in self.partitions.items():
