@@ -1,23 +1,30 @@
 from collections import defaultdict
-from typing import Callable, List
+from typing import Callable, List, Dict, Tuple, TypeVar, Union
+import views_schema
 from toolz.functoolz import curry
-from views_schema import PartitionTimes,PartitionDictionaries
 import pandas as pd
 from . import legacy
 
-TimePeriodGetter = PartitionDictionaries[Callable[[pd.DataFrame],pd.DataFrame]]
+T = TypeVar("T")
+NestedDicts = Dict[str,Dict[str,T]]
+TimePeriodGetter = NestedDicts[Callable[[pd.DataFrame], pd.DataFrame]]
+PartitionsDicts = NestedDicts[Tuple[int,int]]
 
 get_time_period_from_dataframe = curry(lambda start, end, data: data.loc[start:end, :])
 
 class DataPartitioner():
-    def __init__(self, partitions: PartitionTimes):
+    def __init__(self, partitions: Union[PartitionsDicts, views_schema.Partitions]):
+        if isinstance(partitions, dict):
+            partitions = views_schema.Partitions.from_dict(partitions)
+
         self.partitions = partitions
         self._data_partition_getters: TimePeriodGetter = defaultdict(dict)
-        for partition_name, time_periods in self.partitions.items():
-            for time_period_name, time_period in time_periods.items():
-                start, end = time_period
+
+        for partition_name, partition in self.partitions.partitions.items():
+            for timespan_name, timespan in partition.timespans.items():
+                start, end = timespan
                 self._data_partition_getters[partition_name].update({
-                    time_period_name: get_time_period_from_dataframe(
+                    timespan_name: get_time_period_from_dataframe(
                         start,end)})
 
     def __call__(self,
