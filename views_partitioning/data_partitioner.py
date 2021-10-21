@@ -17,11 +17,15 @@ class DataPartitioner():
 
         self.partitions = partitions
 
+    def _map(self, fn):
+        return DataPartitioner({k_a:{k_b:fn(v_b) for k_b,v_b in v_a} for k_a,v_a in self.partitions})
+
     def _pad(self, size: int):
         _old_partitions = self.partitions
         new_partitions = defaultdict(dict)
         sub_from_start = abs(size) if size < 0 else 0
         add_to_end = size if size > 0 else 0
+        self._map(self, 
         for partition_name, partition in self.partitions.partitions.items():
             for timespan_name, timespan in partition.timespans.items():
                 new_partitions[partition_name][timespan_name] = (timespan.start - sub_from_start, timespan.end + add_to_end)
