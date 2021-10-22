@@ -1,4 +1,3 @@
-from collections import defaultdict
 from typing import Callable, List, Dict, Tuple, TypeVar, Union
 import views_schema
 import pandas as pd
@@ -9,6 +8,8 @@ NestedDicts = Dict[str,Dict[str,T]]
 TimePeriodGetter = NestedDicts[Callable[[pd.DataFrame], pd.DataFrame]]
 PartitionsDicts = NestedDicts[Tuple[int,int]]
 
+gtzero = lambda x: x if x > 0 else 0
+
 class DataPartitioner():
 
     def __init__(self, partitions: Union[PartitionsDicts, views_schema.Partitions]):
@@ -18,18 +19,23 @@ class DataPartitioner():
         self.partitions = partitions
 
     def _map(self, fn):
-        return DataPartitioner({k_a:{k_b:fn(v_b) for k_b,v_b in v_a} for k_a,v_a in self.partitions})
+        return DataPartitioner(self.partitions.map(fn))
 
     def _pad(self, size: int):
-        _old_partitions = self.partitions
-        new_partitions = defaultdict(dict)
         sub_from_start = abs(size) if size < 0 else 0
         add_to_end = size if size > 0 else 0
-        self._map(self, 
-        for partition_name, partition in self.partitions.partitions.items():
-            for timespan_name, timespan in partition.timespans.items():
-                new_partitions[partition_name][timespan_name] = (timespan.start - sub_from_start, timespan.end + add_to_end)
-        return DataPartitioner(new_partitions)
+        return self._map(lambda s,e: (s - sub_from_start, e + add_to_end))
+
+    def _trim(self, size: int):
+        add_to_start = size if size > 0 else 0
+        sub_from_end = abs(size) if size < 0 else 0
+        return self._map(lambda s,e: (s + add_to_start, e - sub_from_end))
+
+    def trim(self, size):
+        return self._trim(-gtzero(size))
+
+    def ltrim(self, size):
+        return self._trim(gtzero(size))
 
     def pad(self, size: int):
         size = size if size > 0 else 0
