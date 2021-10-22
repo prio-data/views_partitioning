@@ -21,6 +21,9 @@ class DataPartitioner():
     def _map(self, fn):
         return DataPartitioner(self.partitions.map(fn))
 
+    def _pmap(self, fn):
+        return DataPartitioner(self.partitions.pmap(fn))
+
     def _pad(self, size: int):
         sub_from_start = abs(size) if size < 0 else 0
         add_to_end = size if size > 0 else 0
@@ -44,6 +47,29 @@ class DataPartitioner():
     def lpad(self, size: int):
         size = size if size > 0 else 0
         return self._pad(-size)
+
+    def no_overlap(self, rev:bool = False):
+        return self._pmap(lambda p: p.no_overlap(rev = rev))
+
+    def in_extent(self, start, end):
+        return self._map(lambda s,e: (s if s > start else start, e if e < end else end))
+
+    def extent(self):
+        return self.partitions.extent()
+
+    def shift_left(self, size: int) -> 'DataPartitioner':
+        start,end = self.extent()
+        return (self
+                .lpad(size)
+                .no_overlap(rev = True)
+                .in_extent(start, end))
+
+    def shift_right(self, size: int)-> 'DataPartitioner':
+        start,end = self.extent()
+        return (self
+                .pad(size)
+                .no_overlap()
+                .in_extent(start, end))
 
     def __call__(self,
             partition_name: str,
