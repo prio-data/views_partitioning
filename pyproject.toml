@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "views_partitioning"
-version = "3.0.0"
+version = "3.0.1"
 description = ""
 authors = ["peder2911 <pglandsverk@gmail.com>"]
 
